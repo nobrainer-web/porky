@@ -199,7 +199,7 @@ function appendToFrame(frameObject, stringOrFileOrTwoDArray) {
 // tagThisObject() replaces deprecated tagThis() function
 
 function tagThisObject(tagObject, syncScript, syncIdentifier, syncColumn) {
-    var tagName = 'porky';
+    var tagName = 'Tag - ID ' + syncIdentifier + ', ' + syncColumn;
     var associatedElement;
     var tempTarget;
     var tempObject;
