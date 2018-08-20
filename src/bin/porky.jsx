@@ -1,21 +1,21 @@
 /*
-    porky
-    JavaScript productivity extension library with database access for Adobe InDesign
-    (c)2009 - 2015 Dipl.-Ing. (FH) Oliver Grünberg
-    www.porky.io
+ porky
+ JavaScript productivity extension library with database access for Adobe InDesign
+ (c)2009 - 2015 Dipl.-Ing. (FH) Oliver Grünberg
+ www.porky.io
 
-    Include this file in your JSX scripts before anything else 
-    //@include ../yourPathToPorky/porky.jsx;
-    The file porky-data-source-acces.js must be launched with the Node.Js interpreter.
-    Through porky-data-source-acces.js it is possible for porky.jsx to get access to external data sources.
-    The file porky.jsx provides extended layout functionality and access to data sources.
+ Include this file in your JSX scripts before anything else
+ //@include ../yourPathToPorky/porky.jsx;
+ The file porky-data-source-acces.js must be launched with the Node.Js interpreter.
+ Through porky-data-source-acces.js it is possible for porky.jsx to get access to external data sources.
+ The file porky.jsx provides extended layout functionality and access to data sources.
 
-    Start porky data source access via commandline
-    node porky-data-source-access.js
+ Start porky data source access via commandline
+ node porky-data-source-access.js
 
-    Quit porky data source access via web browser
-    http://127.0.0.1:6789/cXVpdCBwb3JreQo=
-*/
+ Quit porky data source access via web browser
+ http://127.0.0.1:6789/cXVpdCBwb3JreQo=
+ */
 
 // Including external libraries
 //@include ../lib/json-js/json2.js
@@ -33,7 +33,8 @@ settings = {
     },
     sync: {
         scriptFolder: '',
-        identifier: ''
+        identifier: '',
+        column: ''
     }
 };
 console = {};
@@ -109,14 +110,14 @@ function connectToDataSource(dataSourceQuery) {
         reply = Base64.decode(reply);
         return reply;
     }
+    alert(JSON.stringify(conn));
 }
-
 
 
 // porky core functions for Adobe InDesign
 
 function addFrame(xFrame, yFrame, wFrame, hFrame, stringOrFile) {
-    try{
+    try {
         var tempFrame = app.activeWindow.activePage.rectangles.add();
         var tempXFrame = xFrame;
         var tempYFrame = yFrame;
@@ -137,14 +138,14 @@ function addFrame(xFrame, yFrame, wFrame, hFrame, stringOrFile) {
             console.log('Frame added');
             return tempFrame;
         }
-    }catch(e){
+    } catch (e) {
         console.log(e);
     }
 }
 
 
 function appendToFrame(frameObject, stringOrFileOrTwoDArray) {
-    try{
+    try {
         if (typeof(stringOrFileOrTwoDArray) == 'object') {
             // array -> create and append table
             if (stringOrFileOrTwoDArray instanceof Array) {
@@ -157,6 +158,7 @@ function appendToFrame(frameObject, stringOrFileOrTwoDArray) {
                 function numsort(a, b) {
                     return b - a;
                 }
+
                 //Höchster Spaltenwert
                 colMaxCount = colMaxCount.sort(numsort)[0];
                 //Erste Zeile mit 1 Zelle exemplarisch anlegen
@@ -188,7 +190,7 @@ function appendToFrame(frameObject, stringOrFileOrTwoDArray) {
             console.log('String appended');
             return tempAppendedText;
         }
-    }catch(e){
+    } catch (e) {
         console.log(e);
     }
 }
@@ -196,54 +198,54 @@ function appendToFrame(frameObject, stringOrFileOrTwoDArray) {
 
 // tagThisObject() replaces deprecated tagThis() function
 
-function tagThisObject(tagObject, syncScript, syncIdentifier) {
+function tagThisObject(tagObject, syncScript, syncIdentifier, syncColumn) {
     var tagName = 'porky';
     var associatedElement;
     var tempTarget;
     var tempObject;
 
 
-    if((tagObject instanceof Array).toString() === 'false'){
+    if ((tagObject instanceof Array).toString() === 'false') {
         tempObject = tagObject;
         tagObject = [];
         tagObject.push(tempObject);
 
-    }else if((tagObject instanceof Array).toString() === 'true'){
-        if(tagObject.length > 1){
+    } else if ((tagObject instanceof Array).toString() === 'true') {
+        if (tagObject.length > 1) {
             tagObject.splice(1, tagObject.length - 1);
             console.log('Warning: Too many objects, skipping all but last item of array!');
         }
     }
 
-    if(tagObject.toString() === '' || tagObject.toString() === 'undefined' || syncScript === '' || syncIdentifier === ''){
+    if (tagObject.toString() === '' || tagObject.toString() === 'undefined' || syncScript === '' || syncIdentifier === '') {
         console.log('Error: tagThisObject() expects object and parameters... cannot proceed.');
         return false;
     }
 
 
     if (tagObject.toString() === '[object TextFrame]') {
-        
+
         tempTarget = tagObject[0].parentStory;
-        if(tempTarget.associatedXMLElement){
+        if (tempTarget.associatedXMLElement) {
             // untags separately tagged text parts inside of a textframe when the textframe is tagegd afterwards
             tempTarget.associatedXMLElement.untag();
         }
         associatedElement = app.activeDocument.xmlElements.item(0).xmlElements.add(tagName, tempTarget);
 
-    } else if (tagObject.toString() === '[object Rectangle]' || tagObject.toString() === '[object Oval]' || tagObject.toString() === '[object Polygon]' || tagObject.toString() === '[object Table]') {
-        
+    } else if (tagObject.toString() === '[object Rectangle]' || tagObject.toString() === '[object Oval]' || tagObject.toString() === '[object Polygon]' || tagObject.toString() === '[object Table]') {
+
         tempTarget = tagObject[0];
-        if(tempTarget.associatedXMLElement){
+        if (tempTarget.associatedXMLElement) {
             tempTarget.associatedXMLElement.untag();
         }
         associatedElement = app.activeDocument.xmlElements.item(0).xmlElements.add(tagName, tempTarget);
 
     } else if (tagObject.toString() === '[object Word]' || tagObject.toString() === '[object Paragraph]' || tagObject.toString() === '[object InsertionPoint]' || tagObject.toString() === '[object Character]' || tagObject.toString() === '[object Text]' || tagObject.toString() === '[object TextColumn]') {
 
-        tempTarget = tagObject[0];    
-        if(tempTarget.associatedXMLElements[0]){
+        tempTarget = tagObject[0];
+        if (tempTarget.associatedXMLElements[0]) {
             // untags textframe if a word inside of it is tagged afterwards
-            if(tempTarget.associatedXMLElements[0].markupTag.name.toString() === tagName){
+            if (tempTarget.associatedXMLElements[0].markupTag.name.toString() === tagName) {
                 tempTarget.associatedXMLElements[0].untag();
             }
         }
@@ -255,153 +257,14 @@ function tagThisObject(tagObject, syncScript, syncIdentifier) {
 
     }
 
-    if(associatedElement){
+    if (associatedElement) {
         associatedElement.xmlAttributes.add('syncScript', syncScript);
         associatedElement.xmlAttributes.add('syncIdentifier', syncIdentifier);
+        associatedElement.xmlAttributes.add('syncColumn', syncColumn);
     }
 
     return associatedElement;
 }
-
-
-
-function tagThis(tagObject, syncScript, syncIdentifier) {
-
-    // return tagThisObject(tagObject, syncScript, syncIdentifier);
-
-    
-    //SOLL: InsertionPoint, Word, Text, Paragraph, Character, TextColumn, Story, Table, TextFrame, Rectangle, Image
-    //IST:     InsertionPoint, Word, Text, Paragraph, Character, TextColumn,          , Table, TextFrame, Rectangle
-    var porkyTagElement = '';
-    var tempTagName = 'porky';
-    var assXMLElem = '';
-    //Textframe
-    if (tagObject == '[object TextFrame]') {
-        assXMLElem = tagObject.parentStory.associatedXMLElement;
-        if (assXMLElem === null) {
-            //app.activeDocument.xmlElements.item(0).xmlElements.add(tempTagName, tagObject.parentStory);
-            assXMLElem = app.activeDocument.xmlElements.item(0).xmlElements.add(tempTagName, tagObject.parentStory);
-        }
-        if (!assXMLElem.xmlAttributes.item('syncScript').isValid) {
-            assXMLElem.xmlAttributes.add('syncScript', syncScript);
-        } else {
-            assXMLElem.xmlAttributes.item('syncScript').value = syncScript;
-        }
-        if (!assXMLElem.xmlAttributes.item('syncIdentifier').isValid) {
-            assXMLElem.xmlAttributes.add('syncIdentifier', syncIdentifier);
-        } else {
-            assXMLElem.xmlAttributes.item('syncIdentifier').value = syncIdentifier;
-        }
-        console.log(tagObject + ' tagged');
-        return assXMLElem; //XML Element zurückgeben
-    }
-    // Rectangle
-    if (tagObject == '[object Rectangle]' || tagObject == '[object Oval]' || tagObject == '[object Polygon]') {
-        assXMLElem = tagObject.associatedXMLElement;
-        if (assXMLElem === null) {
-            assXMLElem = app.activeDocument.xmlElements.item(0).xmlElements.add(tempTagName, tagObject);
-        }
-        if (!assXMLElem.xmlAttributes.item('syncScript').isValid) {
-            assXMLElem.xmlAttributes.add('syncScript', syncScript);
-        } else {
-            assXMLElem.xmlAttributes.item('syncScript').value = syncScript;
-        }
-        if (!assXMLElem.xmlAttributes.item('syncIdentifier').isValid) {
-            assXMLElem.xmlAttributes.add('syncIdentifier', syncIdentifier);
-        } else {
-            assXMLElem.xmlAttributes.item('syncIdentifier').value = syncIdentifier;
-        }
-        console.log(tagObject + ' tagged');
-        return assXMLElem; //XML Element zurückgeben
-    }
-    if (tagObject == '[object Word]' || tagObject == '[object Paragraph]' || tagObject == '[object InsertionPoint]' || tagObject == '[object Character]' || tagObject == '[object Text]' || tagObject == '[object TextColumn]') {
-        //Bei direkter Verwendung des Objekts über eine Variable
-        if (tagObject.parent instanceof Array) {
-            //[object Story] von tagObject taggen, falls nicht schon geschehen
-            try {
-                app.activeDocument.xmlElements.item(0).xmlElements.add(tempTagName, tagObject.parent[0]);
-            } catch (e) {
-                // $.writeln('tagObject.parent -> cannot add xmlElements.add(): ' + e);
-                console.log(e);
-            }
-        }
-        //Bei selection[0]
-        if (!tagObject.parent instanceof Array) {
-            //[object Story] von tagObject taggen, falls nicht schon geschehen
-            try {
-                app.activeDocument.xmlElements.item(0).xmlElements.add(tempTagName, tagObject.parent);
-            } catch (e) {
-                // $.writeln('!tagObject.parent -> cannot add xmlElements.add(): ' + e);
-                console.log(e);
-            }
-        }
-        if (tagObject.parent == '[object Story]') {
-            try {
-                //alert(tagObject.contents + '\n' + tagObject.associatedXMLElements[0].xmlContent.contents);
-                if (tagObject == tagObject.associatedXMLElements[0].xmlContent) {
-                    tempTagName = tagObject.associatedXMLElements[0].markupTag.name;
-                    tagObject.associatedXMLElements[0].untag();
-                }
-            } catch (e) {
-                // $.writeln('tagObject.parent = [object Story]-> cannot associatedXMLElements[0].untag(): ' + e);
-                console.log(e);
-            }
-            tagObject = app.activeDocument.xmlElements.item(0).xmlElements.add(tempTagName, tagObject);
-            tagObject.xmlAttributes.add('syncScript', syncScript);
-            tagObject.xmlAttributes.add('syncIdentifier', syncIdentifier);
-            console.log(tagObject + ' tagged');
-            return tagObject; //XML Element zurückgeben
-        }
-        // Text selection inside of table cell
-        if (tagObject.parent == '[object Cell]') {
-            // alert('porky\n' + tagObject.parent + '\n' +  tagObject);
-            try {
-                // alert(tagObject.parent + '\n' + tagObject.contents + '\n' + tagObject.associatedXMLElements[0].xmlContent);
-                if (tagObject == tagObject.associatedXMLElements[0].xmlContent) {
-                    tempTagName = tagObject.associatedXMLElements[0].markupTag.name;
-                    tagObject.associatedXMLElements[0].untag();
-                }
-            } catch (e) {
-                console.log(e);
-            }
-            tagObject = app.activeDocument.xmlElements.item(0).xmlElements.add(tempTagName, tagObject);
-            tagObject.xmlAttributes.add('syncScript', syncScript);
-            tagObject.xmlAttributes.add('syncIdentifier', syncIdentifier);
-            console.log(tagObject + ' tagged');
-            return tagObject; //XML Element zurückgeben
-        } else {
-            console.log(tagObject + ' tagged');
-            return tagObject;
-        }
-    }
-    // Table
-    if (tagObject == '[object Table]') {
-        try {
-            //alert(tagObject.contents + '\n' + tagObject.associatedXMLElement.xmlContent.contents);
-            if (tagObject == tagObject.associatedXMLElement.xmlContent) {
-                tempTagName = tagObject.associatedXMLElement.markupTag.name;
-                tagObject.associatedXMLElement.untag();
-            }
-        } catch (e) {
-            // $.writeln('tagObject = [object Table]-> cannot associatedXMLElement.untag(): ' + e);
-            console.log(e);
-        }
-        tagObject = app.activeDocument.xmlElements.item(0).xmlElements.add(tempTagName, tagObject);
-        tagObject.xmlAttributes.add('syncScript', syncScript);
-        tagObject.xmlAttributes.add('syncIdentifier', syncIdentifier);
-        console.log(tagObject + ' tagged');
-        return tagObject; //XML Element zurückgeben
-    }
-    // Table cell ***
-    if (tagObject == '[object Cell]') {
-        console.log(tagObject + ' is not supported');
-    } else {
-        console.log(tagObject + ' tagged');
-        return tagObject;
-    }
-    
-}
-
 
 function recursiveSyncFrame(frameObject) {
     var tempRes = '';
@@ -489,23 +352,23 @@ function recursiveSetSyncIdentifier(taggedObject, syncIdentifier) {
         return false;
     }
     /*
-    if(taggedObject.associatedXMLElement.markupTag.name == 'porky'){
-        taggedObject.associatedXMLElement.xmlAttributes.item('syncIdentifier').value = syncIdentifier;;
-    }
+     if(taggedObject.associatedXMLElement.markupTag.name == 'porky'){
+     taggedObject.associatedXMLElement.xmlAttributes.item('syncIdentifier').value = syncIdentifier;;
+     }
 
-    //sub elements
-    for(var i = 0; i < taggedObject.associatedXMLElement.xmlElements.length; i++){
-        if(taggedObject.associatedXMLElement.xmlElements[i].markupTag.name == 'porky'){
-            taggedObject.associatedXMLElement.xmlElements[i].xmlAttributes.item('syncIdentifier').value = syncIdentifier;
-        }
-    }
-    return taggedObject;
-*/
+     //sub elements
+     for(var i = 0; i < taggedObject.associatedXMLElement.xmlElements.length; i++){
+     if(taggedObject.associatedXMLElement.xmlElements[i].markupTag.name == 'porky'){
+     taggedObject.associatedXMLElement.xmlElements[i].xmlAttributes.item('syncIdentifier').value = syncIdentifier;
+     }
+     }
+     return taggedObject;
+     */
 }
 
 
 function syncXMLElement(taggedXMLElement) {
-    if(!settings.sync.scriptFolder || settings.sync.scriptFolder === ''){
+    if (!settings.sync.scriptFolder || settings.sync.scriptFolder === '') {
         console.log('Error: global object settings.sync.scriptFolder ist invalid or empty but must be set before syncing');
         return false;
     }
@@ -531,6 +394,7 @@ function syncXMLElement(taggedXMLElement) {
                 if (taggedXMLElement.xmlAttributes.item('syncScript').isValid && taggedXMLElement.xmlAttributes.item('syncIdentifier').isValid) {
                     // set global object settings.sync.identifier for use in external sync scripts
                     settings.sync.identifier = taggedXMLElement.xmlAttributes.item('syncIdentifier').value;
+                    settings.sync.column = taggedXMLElement.xmlAttributes.item('syncColumn').value;
                     // handle images
                     if (taggedXMLElement.xmlContent == '[object Image]' || taggedXMLElement.xmlContent == '[object EPS]' || taggedXMLElement.xmlContent == '[object PDF]' || taggedXMLElement.xmlContent == '[object PICT]' || taggedXMLElement.xmlContent == '[object WMF]') {
                         try {
@@ -544,7 +408,7 @@ function syncXMLElement(taggedXMLElement) {
                         }
                     }
                     // handle text
-                    else if (taggedXMLElement.xmlContent == '[object Story]' || taggedXMLElement.xmlContent == '[object Text]' ||  taggedXMLElement.xmlContent == '[object Table]') {
+                    else if (taggedXMLElement.xmlContent == '[object Story]' || taggedXMLElement.xmlContent == '[object Text]' || taggedXMLElement.xmlContent == '[object Table]') {
                         // [object Story] or [object Text]
                         // var tempLocation = taggedXMLElement.xmlContent.parentStory;
                         var tempLocation = taggedXMLElement.xmlContent;
@@ -594,6 +458,7 @@ function syncXMLElement(taggedXMLElement) {
                                 function numsort(a, b) {
                                     return b - a;
                                 }
+
                                 // max columns count
                                 colMaxCount = colMaxCount.sort(numsort)[0];
                                 // create first row
@@ -727,15 +592,15 @@ function placeSnippet(snippetPath, xSnippet, ySnippet) {
 function placeAssetFromLibrary(assetName, xAsset, yAsset) {
     // to do...
     /*
-    myLibrary = app.libraries[0];
+     myLibrary = app.libraries[0];
 
-    for(var i=0; i<myLibrary.assets.length;i++){
-        alert(myLibrary.assets[i].name);
-        if(myLibrary.assets[i].name == assetName){
-            alert('bingo! Placing this asset: ' + assetName);
-        }
-    }
-    */
+     for(var i=0; i<myLibrary.assets.length;i++){
+     alert(myLibrary.assets[i].name);
+     if(myLibrary.assets[i].name == assetName){
+     alert('bingo! Placing this asset: ' + assetName);
+     }
+     }
+     */
 }
 
 
@@ -860,7 +725,7 @@ function httpGetBinaryFile(httpSourceFileURL, httpSourcePort, targetFolder) {
         return false;
     }
     // internal helper functions
-    // Remove header lines from HTTP response  
+    // Remove header lines from HTTP response
     function removeHeaders(binaryWithHeader) {
         var endFlag = true;
         var tempLine = '';
@@ -875,6 +740,7 @@ function httpGetBinaryFile(httpSourceFileURL, httpSourcePort, targetFolder) {
         }
         return binaryWithHeader;
     }
+
     // get single response line from header
     function iterateHeaderLines(headerLine) {
         var tempLine = '';
@@ -1004,20 +870,20 @@ function writeFile(fullFilePath, fileContent, lineEnding) {
 function placeHTML(targetObject, htmlText, inlineStyles, blockStyles) {
 
     /*
-    targetObject is the object where the content of htmlText is placed via InDesign place() tagged text function
+     targetObject is the object where the content of htmlText is placed via InDesign place() tagged text function
 
-    htmlText is simple and clean html without attributes and styles
-    htmlText will be converted to tagged text
+     htmlText is simple and clean html without attributes and styles
+     htmlText will be converted to tagged text
 
-    inlineStyles is a comma separated string holding all html tags for which a character style will be created in InDesign
+     inlineStyles is a comma separated string holding all html tags for which a character style will be created in InDesign
 
-    blockStyles is a comma separated string holding all html tags for which a paragraph style will be created in InDesign
-    'table', 'tr', 'td', 'olli', 'ulli' and 'hr' are treated as block styles
-    */
+     blockStyles is a comma separated string holding all html tags for which a paragraph style will be created in InDesign
+     'table', 'tr', 'td', 'olli', 'ulli' and 'hr' are treated as block styles
+     */
     // split html styles and create array
     inlineStyles = inlineStyles.replace(/ /g, '').split(',');
     blockStyles = blockStyles.replace(/ /g, '').split(',');
-    // read document character and paragaph styles 
+    // read document character and paragaph styles
     var tempCharStyles = app.activeDocument.characterStyles;
     var tempCharNoneStyle = tempCharStyles.item(0);
     var tempParaStyles = app.activeDocument.paragraphStyles;
@@ -1050,7 +916,7 @@ function placeHTML(targetObject, htmlText, inlineStyles, blockStyles) {
         // parse htmlText and create tagged text
         // if (inlineStyles[i] == 'a') {
         //     htmlText = htmlText.replace(/<a href=".*?">/g, '<a>').replace(/<\/a>/g, '');
-        // } else 
+        // } else
         if (inlineStyles[i] == 'img') {
             // clean up html tag
             // htmlText = htmlText.replace(/<img src="(.*?)" (.*?)>/g, '[porky-img]$1[/porky-img]');
@@ -1151,18 +1017,18 @@ function placeHTML(targetObject, htmlText, inlineStyles, blockStyles) {
 
 function placeholderToInlineImage(targetObject, localImageFolder, downloadImage, httpSourcePort) {
     /*
-    searches strings in this format and replaces them with images:
-    [img]/localfolder/image-name.jpg[/img]
-    or
-    [img]http://remote-url/image-name.jpg[/img]
+     searches strings in this format and replaces them with images:
+     [img]/localfolder/image-name.jpg[/img]
+     or
+     [img]http://remote-url/image-name.jpg[/img]
 
-    downloads remote images into localImageFolder if downloadImage=true
-    or just uses localImageFolder if downloadImage=false
+     downloads remote images into localImageFolder if downloadImage=true
+     or just uses localImageFolder if downloadImage=false
 
-    httpSourcePort is the port which is used for downloading the image from the http server
+     httpSourcePort is the port which is used for downloading the image from the http server
 
-    targetObject is the frame object which is searched for placeholders
-    */
+     targetObject is the frame object which is searched for placeholders
+     */
     if (httpSourcePort === '') {
         httpSourcePort = '80';
     }
