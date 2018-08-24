@@ -392,97 +392,22 @@ function syncXMLElement(taggedXMLElement) {
             // only proceed if there's more than 2 attributes
             if (taggedXMLElement.xmlAttributes.length > 1) {
                 // only proceed if at minimum the attributes syncScript and syncIdentifier are available
-                if (taggedXMLElement.xmlAttributes.item('syncScript').isValid && taggedXMLElement.xmlAttributes.item('syncIdentifier').isValid) {
+                if (taggedXMLElement.xmlAttributes.item('syncScript').isValid && taggedXMLElement.xmlAttributes.item('syncIdentifier').isValid && taggedXMLElement.xmlAttributes.item('syncColumn').isValid) {
                     // set global object settings.sync.identifier for use in external sync scripts
                     settings.sync.identifier = taggedXMLElement.xmlAttributes.item('syncIdentifier').value;
                     settings.sync.column = taggedXMLElement.xmlAttributes.item('syncColumn').value;
-                    // handle images
-                    if (taggedXMLElement.xmlContent == '[object Image]' || taggedXMLElement.xmlContent == '[object EPS]' || taggedXMLElement.xmlContent == '[object PDF]' || taggedXMLElement.xmlContent == '[object PICT]' || taggedXMLElement.xmlContent == '[object WMF]') {
-                        try {
-                            // content syncable
-                            taggedXMLElement.xmlContent.place(new File($.evalFile(File(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value))), false);
-                            return taggedXMLElement;
-                        } catch (e) {
-                            // content not syncable or already done by external syncScript
-                            console.log('Error: \'' + taggedXMLElement.xmlAttributes.item('syncIdentifier').value + '\' global object settings.sync.scriptFolder + xmlAttributes.item(\'syncScript\').value ' + e);
-                            return false;
-                        }
-                    }
-                    // handle text
-                    else if (taggedXMLElement.xmlContent == '[object Story]' || taggedXMLElement.xmlContent == '[object Text]' || taggedXMLElement.xmlContent == '[object Table]') {
-                        // [object Story] or [object Text]
-                        // var tempLocation = taggedXMLElement.xmlContent.parentStory;
-                        var tempLocation = taggedXMLElement.xmlContent;
-                        // if not a table
-                        if (tempLocation.tables.length < 1) {
-                            try {
-                                // content syncable
-                                taggedXMLElement.contents = $.evalFile(File(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value));
-                                return taggedXMLElement;
-                            } catch (e) {
-                                // content not syncable or already done by external syncScript
-                                console.log('Warning: Content not syncable or already synced. ' + e + ' syncIdentifier: \"' + taggedXMLElement.xmlAttributes.item('syncIdentifier').value + '\" syncScript: \"' + unescape(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value) + '\"');
-                                return false;
-                            }
-                        }
-                        // if table
-                        else if (tempLocation.tables.length > 0) {
-                            try {
-                                // content syncable
-                                // [object Table]
-                                var newTableArray = '';
-                                var tempRowsCount = '';
-                                var tempColsCount = '';
-                                // get content for new table
-                                // content type is a 2-dimensional array
-                                newTableArray = $.evalFile(File(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value));
-                                // first delete all existing rows but keep first
-                                if (tempLocation.tables[0].rows.length > 1) {
-                                    tempRowsCount = tempLocation.tables[0].rows.length;
-                                    for (var i = 0; i < tempRowsCount - 1; i++) {
-                                        tempLocation.tables[0].rows.lastItem().remove();
-                                    }
-                                }
-                                // then delete all columns but keep first
-                                if (tempLocation.tables[0].columns.length > 1) {
-                                    tempColsCount = tempLocation.tables[0].columns.length;
-                                    for (var k = 0; k < tempColsCount - 1; k++) {
-                                        tempLocation.tables[0].columns.lastItem().remove();
-                                    }
-                                }
-                                // calculate max columns
-                                var colMaxCount = [];
-                                for (var l = 0; l <= newTableArray.length - 1; l++) {
-                                    colMaxCount[l] = newTableArray[l].length;
-                                }
-                                // little helper function for sorting numbers
-                                function numsort(a, b) {
-                                    return b - a;
-                                }
 
-                                // max columns count
-                                colMaxCount = colMaxCount.sort(numsort)[0];
-                                // create first row
-                                for (var n = 1; n < colMaxCount; n++) {
-                                    tempLocation.tables[0].columns.add();
-                                }
-                                // add content rows
-                                for (var p = 0; p < newTableArray.length; p++) {
-                                    tempLocation.tables[0].rows[p].contents = newTableArray[p];
-                                    tempLocation.tables[0].rows.add();
-                                }
-                                // remove last empty row
-                                tempLocation.tables[0].rows.lastItem().remove();
-                                return taggedXMLElement;
-                            } catch (e) {
-                                // content not syncable or already done by external syncScript
-                                console.log(e);
-                                return false;
-                            }
-                        } else {
-                            console.log('Error: tables.length !> 0');
-                            return false;
-                        }
+                    try {
+                        // TODO Remove old line utilizing eval.
+                        //taggedXMLElement.xmlContent.place(new File($.evalFile(File(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value))), false);
+
+                        // content syncable
+                        app.doScript(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value, ScriptLanguage.javascript);
+                        return taggedXMLElement;
+                    } catch (e) {
+                        // content not syncable or already done by external syncScript
+                        console.log('Error: \'' + taggedXMLElement.xmlAttributes.item('syncIdentifier').value + '\' global object settings.sync.scriptFolder + xmlAttributes.item(\'syncScript\').value ' + e);
+                        return false;
                     }
                 } else {
                     console.log('Error: invalid xmlAttributes.item(\'syncScript\') or invalid xmlAttributes.item(\'syncIdentifier\')!');
@@ -490,6 +415,123 @@ function syncXMLElement(taggedXMLElement) {
                 }
             }
         }
+        // if (taggedXMLElement !== null) {
+        //     // only proceed if there's more than 2 attributes
+        //     if (taggedXMLElement.xmlAttributes.length > 1) {
+        //         // only proceed if at minimum the attributes syncScript and syncIdentifier are available
+        //         if (taggedXMLElement.xmlAttributes.item('syncScript').isValid && taggedXMLElement.xmlAttributes.item('syncIdentifier').isValid) {
+        //             // set global object settings.sync.identifier for use in external sync scripts
+        //             settings.sync.identifier = taggedXMLElement.xmlAttributes.item('syncIdentifier').value;
+        //             settings.sync.column = taggedXMLElement.xmlAttributes.item('syncColumn').value;
+        //             // handle graphics
+        //             if (taggedXMLElement.xmlContent == '[object Rectangle]') {
+        //                 try {
+        //                     // content syncable
+        //                     //taggedXMLElement.xmlContent.place(new File($.evalFile(File(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value))), false);
+        //                     app.doScript(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value, ScriptLanguage.javascript);
+        //                     return taggedXMLElement;
+        //                 } catch (e) {
+        //                     // content not syncable or already done by external syncScript
+        //                     console.log('Error: \'' + taggedXMLElement.xmlAttributes.item('syncIdentifier').value + '\' global object settings.sync.scriptFolder + xmlAttributes.item(\'syncScript\').value ' + e);
+        //                     return false;
+        //                 }
+        //             }
+        //             // handle images
+        //             else if (taggedXMLElement.xmlContent == '[object Image]' || taggedXMLElement.xmlContent == '[object EPS]' || taggedXMLElement.xmlContent == '[object PDF]' || taggedXMLElement.xmlContent == '[object PICT]' || taggedXMLElement.xmlContent == '[object WMF]') {
+        //                 try {
+        //                     // content syncable
+        //                     taggedXMLElement.xmlContent.place(new File($.evalFile(File(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value))), false);
+        //                     return taggedXMLElement;
+        //                 } catch (e) {
+        //                     // content not syncable or already done by external syncScript
+        //                     console.log('Error: \'' + taggedXMLElement.xmlAttributes.item('syncIdentifier').value + '\' global object settings.sync.scriptFolder + xmlAttributes.item(\'syncScript\').value ' + e);
+        //                     return false;
+        //                 }
+        //             }
+        //             // handle text
+        //             else if (taggedXMLElement.xmlContent == '[object Story]' || taggedXMLElement.xmlContent == '[object Text]' || taggedXMLElement.xmlContent == '[object Table]') {
+        //                 // [object Story] or [object Text]
+        //                 // var tempLocation = taggedXMLElement.xmlContent.parentStory;
+        //                 var tempLocation = taggedXMLElement.xmlContent;
+        //                 // if not a table
+        //                 if (tempLocation.tables.length < 1) {
+        //                     try {
+        //                         // content syncable
+        //                         app.doScript(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value, ScriptLanguage.javascript);
+        //
+        //                         // taggedXMLElement.contents = $.evalFile(File(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value));
+        //                         return taggedXMLElement;
+        //                     } catch (e) {
+        //                         // content not syncable or already done by external syncScript
+        //                         console.log('Warning: Content not syncable or already synced. ' + e + ' syncIdentifier: \"' + taggedXMLElement.xmlAttributes.item('syncIdentifier').value + '\" syncScript: \"' + unescape(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value) + '\"');
+        //                         return false;
+        //                     }
+        //                 }
+        //                 // if table
+        //                 else if (tempLocation.tables.length > 0) {
+        //                     try {
+        //                         // content syncable
+        //                         // [object Table]
+        //                         var newTableArray = '';
+        //                         var tempRowsCount = '';
+        //                         var tempColsCount = '';
+        //                         // get content for new table
+        //                         // content type is a 2-dimensional array
+        //                         newTableArray = $.evalFile(File(settings.sync.scriptFolder + taggedXMLElement.xmlAttributes.item('syncScript').value));
+        //                         // first delete all existing rows but keep first
+        //                         if (tempLocation.tables[0].rows.length > 1) {
+        //                             tempRowsCount = tempLocation.tables[0].rows.length;
+        //                             for (var i = 0; i < tempRowsCount - 1; i++) {
+        //                                 tempLocation.tables[0].rows.lastItem().remove();
+        //                             }
+        //                         }
+        //                         // then delete all columns but keep first
+        //                         if (tempLocation.tables[0].columns.length > 1) {
+        //                             tempColsCount = tempLocation.tables[0].columns.length;
+        //                             for (var k = 0; k < tempColsCount - 1; k++) {
+        //                                 tempLocation.tables[0].columns.lastItem().remove();
+        //                             }
+        //                         }
+        //                         // calculate max columns
+        //                         var colMaxCount = [];
+        //                         for (var l = 0; l <= newTableArray.length - 1; l++) {
+        //                             colMaxCount[l] = newTableArray[l].length;
+        //                         }
+        //                         // little helper function for sorting numbers
+        //                         function numsort(a, b) {
+        //                             return b - a;
+        //                         }
+        //
+        //                         // max columns count
+        //                         colMaxCount = colMaxCount.sort(numsort)[0];
+        //                         // create first row
+        //                         for (var n = 1; n < colMaxCount; n++) {
+        //                             tempLocation.tables[0].columns.add();
+        //                         }
+        //                         // add content rows
+        //                         for (var p = 0; p < newTableArray.length; p++) {
+        //                             tempLocation.tables[0].rows[p].contents = newTableArray[p];
+        //                             tempLocation.tables[0].rows.add();
+        //                         }
+        //                         // remove last empty row
+        //                         tempLocation.tables[0].rows.lastItem().remove();
+        //                         return taggedXMLElement;
+        //                     } catch (e) {
+        //                         // content not syncable or already done by external syncScript
+        //                         console.log(e);
+        //                         return false;
+        //                     }
+        //                 } else {
+        //                     console.log('Error: tables.length !> 0');
+        //                     return false;
+        //                 }
+        //             }
+        //         } else {
+        //             console.log('Error: invalid xmlAttributes.item(\'syncScript\') or invalid xmlAttributes.item(\'syncIdentifier\')!');
+        //             return false;
+        //         }
+        //     }
+        // }
     }
 }
 
