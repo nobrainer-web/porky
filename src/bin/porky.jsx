@@ -432,12 +432,10 @@ function syncXMLElement(taggedXMLElement, direction) {
 
                     try {
                         // Fire progress hook in order to for calling script to display progress of syncing items.
-                        var onProgress = settings.sync.progressFunction;
-                        if (typeof onProgress === 'function')
-                            onProgress();
                         // content syncable
                         var syncScript = settings.sync.scriptFolder + direction + taggedXMLElement.xmlAttributes.item('syncScript').value;
                         app.doScript(syncScript, ScriptLanguage.javascript);
+                        onProgress();
                         return taggedXMLElement;
                     } catch (e) {
                         // content not syncable or already done by external syncScript
@@ -463,7 +461,13 @@ function syncGroup(myGroup, direction) {
     var myScript = myJSON.script;
 
     app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript);
+    onProgress();
     return myGroup;
+}
+
+function onProgress() {
+    var handler = settings.sync.progressFunction;
+    if (typeof handler === 'function') handler();
 }
 
 function createPlaceholderImage(folder) {
