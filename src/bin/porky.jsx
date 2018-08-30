@@ -369,7 +369,7 @@ function recursiveSyncFrame(frameObject, direction) {
 
             if (frameObject[c] == '[object Group]') {
                 if (frameObject[c].label != '') {
-                    tempRes = syncGroup(frameObject[c]);
+                    tempRes = syncGroup(frameObject[c], direction);
                 }
                 //tempRes = recursiveSyncXMLElement(frameObject[c].associatedXMLElement);
             }
@@ -453,7 +453,7 @@ function syncXMLElement(taggedXMLElement, direction) {
     }
 }
 
-function syncGroup(myGroup) {
+function syncGroup(myGroup, direction) {
     if (!settings.sync.scriptFolder || settings.sync.scriptFolder === '') {
         console.log('Error: global object settings.sync.scriptFolder ist invalid or empty but must be set before syncing');
         return false;
@@ -462,7 +462,7 @@ function syncGroup(myGroup) {
     var myJSON = eval(myGroup.label);
     var myScript = myJSON.script;
 
-    app.doScript(settings.sync.scriptFolder + myScript, ScriptLanguage.javascript);
+    app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript);
     return myGroup;
 }
 
