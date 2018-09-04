@@ -233,11 +233,17 @@ function tagThisObject(tagObject, syncScript, syncIdentifier, syncColumn) {
 
     } else if (tagObject.toString() === '[object Rectangle]' || tagObject.toString() === '[object Oval]' || tagObject.toString() === '[object Polygon]' || tagObject.toString() === '[object Table]') {
 
-        tempTarget = tagObject[0];
-        if (tempTarget.associatedXMLElement) {
-            tempTarget.associatedXMLElement.untag();
-        }
-        associatedElement = app.activeDocument.xmlElements.item(0).xmlElements.add(tagName, tempTarget);
+        var myJSON = {script: "" + syncScript + "", identifier: "" + syncIdentifier + "", column: "" + syncColumn + ""};
+
+        tagObject[0].label = myJSON.toSource();
+
+        /*
+         tempTarget = tagObject[0];
+         if (tempTarget.associatedXMLElement) {
+         tempTarget.associatedXMLElement.untag();
+         }
+         associatedElement = app.activeDocument.xmlElements.item(0).xmlElements.add(tagName, tempTarget);
+         */
 
     } else if (tagObject.toString() === '[object Word]' || tagObject.toString() === '[object Paragraph]' || tagObject.toString() === '[object InsertionPoint]' || tagObject.toString() === '[object Character]' || tagObject.toString() === '[object Text]' || tagObject.toString() === '[object TextColumn]') {
 
@@ -274,7 +280,13 @@ function tagThisObject(tagObject, syncScript, syncIdentifier, syncColumn) {
 
 function setSyncIdentifier(singleTaggedObject, syncIdentifier) {
     try {
-        if (singleTaggedObject == '[object Table]' || singleTaggedObject == '[object TextFrame]' || singleTaggedObject == '[object Rectangle]' || singleTaggedObject == '[object Image]' || singleTaggedObject == '[object Story]') {
+        if (singleTaggedObject == '[object Table]' || singleTaggedObject == '[object Rectangle]' || singleTaggedObject == '[object Image]') {
+            var myJSON = eval(singleTaggedObject.label);
+            myJSON.identifier = syncIdentifier;
+            if (myJSON.identifier != undefined) {
+                singleTaggedObject.label = myJSON.toSource();
+            }
+        } else if (singleTaggedObject == '[object TextFrame]' || singleTaggedObject == '[object Story]') {
             if (singleTaggedObject.associatedXMLElement.isValid) {
                 singleTaggedObject.associatedXMLElement.xmlAttributes.item('syncIdentifier').value = syncIdentifier;
             }
@@ -295,7 +307,13 @@ function setSyncIdentifier(singleTaggedObject, syncIdentifier) {
 function recursiveSetSyncIdentifier(taggedObject, syncIdentifier) {
     try {
         for (var t = 0; t < taggedObject.length; t++) {
-            if (taggedObject[t] == '[object Table]' || taggedObject[t] == '[object TextFrame]' || taggedObject[t] == '[object Rectangle]' || taggedObject[t] == '[object Image]' || taggedObject[t] == '[object Story]') {
+            if (taggedObject[t] == '[object Rectangle]' || taggedObject[t] == '[object Image]') {
+                var myJSON = eval(taggedObject[t].label);
+                myJSON.identifier = syncIdentifier;
+                if (myJSON.identifier != undefined) {
+                    taggedObject[t].label = myJSON.toSource();
+                }
+            } else if (taggedObject[t] == '[object Table]' || taggedObject[t] == '[object TextFrame]' || taggedObject[t] == '[object Story]') {
                 if (taggedObject[t].associatedXMLElement) {
                     var tempAssElem = taggedObject[t].associatedXMLElement;
                     //taggedObject[t].associatedXMLElement.xmlAttributes.item('syncIdentifier').value = syncIdentifier;
@@ -325,10 +343,19 @@ function recursiveSetSyncIdentifier(taggedObject, syncIdentifier) {
                 }
             } else if (taggedObject[t] == '[object Group]') {
 
-                var myJSON = eval(taggedObject[t].label);
-                myJSON.identifier = syncIdentifier;
+                // if layer is named product
+                if (taggedObject[t].name.indexOf('product') > -1) {
+                    taggedObject[t].name = "product-" + syncIdentifier;
+                    console.log("recursive setting syncIdentifier: " + syncIdentifier);
+                    recursiveSetSyncIdentifier(taggedObject[t].allPageItems, syncIdentifier);
+                } else if (taggedObject[t].label != '') {
+                    var myJSON = eval(taggedObject[t].label);
+                    myJSON.identifier = syncIdentifier;
+                    if (myJSON.identifier != undefined) {
+                        taggedObject[t].label = myJSON.toSource();
+                    }
+                }
 
-                taggedObject[t].label = myJSON.toSource();
 
             }
         }
@@ -363,14 +390,24 @@ function recursiveSyncFrame(frameObject, direction) {
             if (frameObject[c] == '[object XMLElement]') {
                 tempRes = recursiveSyncXMLElement(frameObject[c], direction);
             }
-            if (frameObject[c] == '[object TextFrame]' || frameObject[c] == '[object Rectangle]' || frameObject[c] == '[object Image]' || frameObject[c] == '[object Story]') {
+            if (frameObject[c] == '[object TextFrame]' || frameObject[c] == '[object Story]') {
                 tempRes = recursiveSyncXMLElement(frameObject[c].associatedXMLElement, direction);
             }
 
+            if (frameObject[c] == '[object Rectangle]' || frameObject[c] == '[object Image]') {
+                tempRes = syncRectOrImage(frameObject[c], direction);
+            }
+
             if (frameObject[c] == '[object Group]') {
-                if (frameObject[c].label != '') {
+
+                // if layer is named product
+                if (frameObject[c].name.indexOf('product') > -1) {
+                    tempRes = recursiveSyncFrame(frameObject[c].allPageItems, direction);
+                } else if (frameObject[c].label != '') {
+                    // If we have a scriptLabel
                     tempRes = syncGroup(frameObject[c], direction);
                 }
+
                 //tempRes = recursiveSyncXMLElement(frameObject[c].associatedXMLElement);
             }
         }
@@ -382,6 +419,7 @@ function recursiveSyncFrame(frameObject, direction) {
         if (frameObject == '[object TextFrame]' || frameObject == '[object Rectangle]' || frameObject == '[object Image]' || frameObject == '[object Story]') {
             tempRes = recursiveSyncXMLElement(frameObject.associatedXMLElement, direction);
         }
+        console.log("not instance of array");
     }
     return tempRes;
 }
@@ -463,6 +501,24 @@ function syncGroup(myGroup, direction) {
     app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript);
     onProgress();
     return myGroup;
+}
+
+function syncRectOrImage(myRectOrImage, direction) {
+
+    if (!settings.sync.scriptFolder || settings.sync.scriptFolder === '') {
+        console.log('Error: global object settings.sync.scriptFolder ist invalid or empty but must be set before syncing');
+        return false;
+    }
+
+    var myJSON = eval(myRectOrImage.label);
+    var myScript = myJSON.script;
+
+    if (myScript != undefined) {
+        app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript);
+        console.log("After do script");
+    }
+    onProgress();
+    return myRectOrImage;
 }
 
 function onProgress() {
