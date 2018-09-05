@@ -280,10 +280,12 @@ function tagThisObject(tagObject, syncScript, syncIdentifier, syncColumn) {
 
 function setSyncIdentifier(singleTaggedObject, syncIdentifier) {
     try {
+        //console.log("setSyncIdentifier: " + singleTaggedObject)
         if (singleTaggedObject == '[object Table]' || singleTaggedObject == '[object Rectangle]' || singleTaggedObject == '[object Image]') {
             var myJSON = eval(singleTaggedObject.label);
-            myJSON.identifier = syncIdentifier;
-            if (myJSON.identifier != undefined) {
+
+            if (myJSON instanceof Object) {
+	            myJSON.identifier = syncIdentifier;
                 singleTaggedObject.label = myJSON.toSource();
             }
         } else if (singleTaggedObject == '[object TextFrame]' || singleTaggedObject == '[object Story]') {
@@ -298,19 +300,21 @@ function setSyncIdentifier(singleTaggedObject, syncIdentifier) {
         return singleTaggedObject;
     } catch (e) {
         // $.writeln('setSyncIdentifier(singleTaggedObject, syncIdentifier): ' + e);
-        console.log('Error: Cannot set ' + syncIdentifier + ' ' + e);
+        console.log('Error in setSyncIdentifier: Cannot set ' + syncIdentifier + ' ' + e);
         return false;
     }
 }
 
 
 function recursiveSetSyncIdentifier(taggedObject, syncIdentifier) {
+
     try {
         for (var t = 0; t < taggedObject.length; t++) {
             if (taggedObject[t] == '[object Rectangle]' || taggedObject[t] == '[object Image]') {
                 var myJSON = eval(taggedObject[t].label);
-                myJSON.identifier = syncIdentifier;
-                if (myJSON.identifier != undefined) {
+
+                if (myJSON instanceof Object) {
+	                myJSON.identifier = syncIdentifier;
                     taggedObject[t].label = myJSON.toSource();
                 }
             } else if (taggedObject[t] == '[object Table]' || taggedObject[t] == '[object TextFrame]' || taggedObject[t] == '[object Story]') {
@@ -346,12 +350,12 @@ function recursiveSetSyncIdentifier(taggedObject, syncIdentifier) {
                 // if layer is named product
                 if (taggedObject[t].name.indexOf('product') > -1) {
                     taggedObject[t].name = "product-" + syncIdentifier;
-                    console.log("recursive setting syncIdentifier: " + syncIdentifier);
                     recursiveSetSyncIdentifier(taggedObject[t].allPageItems, syncIdentifier);
                 } else if (taggedObject[t].label != '') {
                     var myJSON = eval(taggedObject[t].label);
-                    myJSON.identifier = syncIdentifier;
-                    if (myJSON.identifier != undefined) {
+
+                    if (myJSON instanceof Object) {
+	                    myJSON.identifier = syncIdentifier;
                         taggedObject[t].label = myJSON.toSource();
                     }
                 }
@@ -362,7 +366,7 @@ function recursiveSetSyncIdentifier(taggedObject, syncIdentifier) {
         return taggedObject;
     } catch (e) {
         // $.writeln('recursiveSetSyncIdentifier(taggedObject, syncIdentifier): ' + e);
-        console.log('Error: Cannot set ' + syncIdentifier + ' ' + e);
+        console.log('Error in recursiveSetSyncIdentifier: Cannot set ' + syncIdentifier + ' ' + e);
         return false;
     }
     /*
@@ -402,7 +406,9 @@ function recursiveSyncFrame(frameObject, direction) {
 
                 // if layer is named product
                 if (frameObject[c].name.indexOf('product') > -1) {
-                    tempRes = recursiveSyncFrame(frameObject[c].allPageItems, direction);
+                    //alert("Objects: " + frameObject[c].allPageItems);
+	                //alert("Objects: " + frameObject[c].pageItems.everyItem().getElements());
+                    tempRes = recursiveSyncFrame(frameObject[c].pageItems.everyItem().getElements(), direction);
                 } else if (frameObject[c].label != '') {
                     // If we have a scriptLabel
                     tempRes = syncGroup(frameObject[c], direction);
@@ -495,10 +501,16 @@ function syncGroup(myGroup, direction) {
         return false;
     }
 
-    var myJSON = eval(myGroup.label);
-    var myScript = myJSON.script;
+	var myJSON = eval(myGroup.label);
+	var test = myJSON instanceof Object;
 
-    app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript);
+	if (myJSON instanceof Object) {
+		console.log("json syncGroup: " + myJSON + " - " + test);
+		var myScript = myJSON.script;
+
+		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript);
+	}
+
     onProgress();
     return myGroup;
 }
@@ -511,12 +523,15 @@ function syncRectOrImage(myRectOrImage, direction) {
     }
 
     var myJSON = eval(myRectOrImage.label);
-    var myScript = myJSON.script;
+    var test = myJSON instanceof Object;
+	console.log("json syncRectOrImage: " + myJSON + " - " + test);
 
-    if (myScript != undefined) {
-        app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript);
-        console.log("After do script");
-    }
+	if (myJSON instanceof Object) {
+		var myScript = myJSON.script;
+
+		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript);
+	}
+
     onProgress();
     return myRectOrImage;
 }
