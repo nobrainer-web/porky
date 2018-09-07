@@ -479,7 +479,7 @@ function syncXMLElement(taggedXMLElement, direction) {
                         // Fire progress hook in order to for calling script to display progress of syncing items.
                         // content syncable
                         var syncScript = settings.sync.scriptFolder + direction + taggedXMLElement.xmlAttributes.item('syncScript').value;
-                        var undoName = getUndoName(taggedXMLElement);
+                        var undoName = getXMLUndoName(taggedXMLElement);
                         app.doScript(syncScript, ScriptLanguage.javascript, undefined, UndoModes.fastEntireScript, undoName);
                         onProgress();
                         return taggedXMLElement;
@@ -510,7 +510,8 @@ function syncGroup(myGroup, direction) {
 		// console.log("json syncGroup: " + myJSON + " - " + test);
 		var myScript = myJSON.script;
 
-		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript, undefined, UndoModes.fastEntireScript);
+        var undoName = getGroupUndoName(myGroup);
+        app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript, undefined, UndoModes.fastEntireScript, undoName);
 	}
 
     onProgress();
@@ -531,18 +532,34 @@ function syncRectOrImage(myRectOrImage, direction) {
 	if (myJSON instanceof Object) {
 		var myScript = myJSON.script;
 
-		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript, undefined, UndoModes.fastEntireScript);
+        var undoName = getGroupUndoName(myRectOrImage);
+        app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript, undefined, UndoModes.fastEntireScript, undoName);
 	}
 
     onProgress();
     return myRectOrImage;
 }
 
-function getUndoName(element) {
-    var script = element.xmlAttributes.item('syncScript').value;
-    script = script.substring(1).replace('.jsx', '');
+function getXMLUndoName(element) {
+    var script = getScriptName(element.xmlAttributes.item('syncScript').value);
     var id = element.xmlAttributes.item('syncIdentifier').value;
     var column = element.xmlAttributes.item('syncColumn').value;
+    return constructUndoName(script, id, column);
+}
+
+function getGroupUndoName(group) {
+    var groupObject = eval(group.label);
+    var script = getScriptName(groupObject.script);
+    var id = groupObject.identifier;
+    var column = groupObject.column;
+    return constructUndoName(script, id, column);
+}
+
+function getScriptName(script) {
+    return script.substring(1).replace('.jsx', '');
+}
+
+function constructUndoName(script, id, column) {
     return script + ' script for ID ' + id + ' - ' + column;
 }
 
