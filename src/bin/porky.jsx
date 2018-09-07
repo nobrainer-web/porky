@@ -507,7 +507,7 @@ function syncGroup(myGroup, direction) {
 	var test = myJSON instanceof Object;
 
 	if (myJSON instanceof Object) {
-		console.log("json syncGroup: " + myJSON + " - " + test);
+		// console.log("json syncGroup: " + myJSON + " - " + test);
 		var myScript = myJSON.script;
 
 		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript, undefined, UndoModes.fastEntireScript);
@@ -526,7 +526,7 @@ function syncRectOrImage(myRectOrImage, direction) {
 
     var myJSON = eval(myRectOrImage.label);
     var test = myJSON instanceof Object;
-	console.log("json syncRectOrImage: " + myJSON + " - " + test);
+	// console.log("json syncRectOrImage: " + myJSON + " - " + test);
 
 	if (myJSON instanceof Object) {
 		var myScript = myJSON.script;
