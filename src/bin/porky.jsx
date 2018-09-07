@@ -479,7 +479,8 @@ function syncXMLElement(taggedXMLElement, direction) {
                         // Fire progress hook in order to for calling script to display progress of syncing items.
                         // content syncable
                         var syncScript = settings.sync.scriptFolder + direction + taggedXMLElement.xmlAttributes.item('syncScript').value;
-                        app.doScript(syncScript, ScriptLanguage.javascript);
+                        var undoName = getUndoName(taggedXMLElement);
+                        app.doScript(syncScript, ScriptLanguage.javascript, undefined, undoName);
                         onProgress();
                         return taggedXMLElement;
                     } catch (e) {
@@ -509,7 +510,7 @@ function syncGroup(myGroup, direction) {
 		console.log("json syncGroup: " + myJSON + " - " + test);
 		var myScript = myJSON.script;
 
-		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript);
+		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript, undefined,);
 	}
 
     onProgress();
@@ -535,6 +536,14 @@ function syncRectOrImage(myRectOrImage, direction) {
 
     onProgress();
     return myRectOrImage;
+}
+
+function getUndoName(element) {
+    var script = element.xmlAttributes.item('syncScript').value;
+    script = script.substring(1).replace('.jsx', '');
+    var id = element.xmlAttributes.item('syncIdentifier').value;
+    var column = element.xmlAttributes.item('syncColumn').value;
+    return script + ' script for ID ' + id + ' - ' + column;
 }
 
 function onProgress() {
