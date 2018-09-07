@@ -480,7 +480,7 @@ function syncXMLElement(taggedXMLElement, direction) {
                         // content syncable
                         var syncScript = settings.sync.scriptFolder + direction + taggedXMLElement.xmlAttributes.item('syncScript').value;
                         var undoName = getUndoName(taggedXMLElement);
-                        app.doScript(syncScript, ScriptLanguage.javascript, undefined, undoName);
+                        app.doScript(syncScript, ScriptLanguage.javascript, undefined, UndoModes.fastEntireScript, undoName);
                         onProgress();
                         return taggedXMLElement;
                     } catch (e) {
@@ -510,7 +510,7 @@ function syncGroup(myGroup, direction) {
 		console.log("json syncGroup: " + myJSON + " - " + test);
 		var myScript = myJSON.script;
 
-		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript, undefined,);
+		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript, undefined, UndoModes.fastEntireScript);
 	}
 
     onProgress();
@@ -531,7 +531,7 @@ function syncRectOrImage(myRectOrImage, direction) {
 	if (myJSON instanceof Object) {
 		var myScript = myJSON.script;
 
-		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript);
+		app.doScript(settings.sync.scriptFolder + direction + myScript, ScriptLanguage.javascript, undefined, UndoModes.fastEntireScript);
 	}
 
     onProgress();
